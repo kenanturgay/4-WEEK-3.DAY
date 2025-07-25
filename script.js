@@ -50,6 +50,7 @@
       self.init = () => {
         self.buildCSS();
         self.loadFromStorage();
+        self.observeChanges();
       };
 
       self.buildCSS = () => {
@@ -231,9 +232,6 @@
             100% { transform: rotate(360deg); }
             }
         .${classes.reloadBtn} {
-            position: fixed;
-            top: 20px;
-            right: 20px;
             background-color: var(--color-btn);
             color: white;
             border: none;
@@ -242,6 +240,7 @@
             cursor: pointer;
             font-size: var(--font-size-base);
             transition: background-color var(--transition-default);
+            z-index: 1000;
         }
 
 
@@ -271,8 +270,6 @@
             "https://jsonplaceholder.typicode.com/users"
           );
 
-          if (!response.ok) throw new Error("Server Error: " + response.status);
-
           const data = await response.json();
           self.users = data;
           self.saveToStorage();
@@ -301,7 +298,6 @@
           const timeDiff = now - parsedData.time;
 
           if (timeDiff < 86400000) {
-            // 24 hours in milliseconds
             self.users = parsedData.users;
             self.buildHTML();
             return;
@@ -312,11 +308,20 @@
       };
 
       self.showReloadButton = () => {
+        if (sessionStorage.getItem("reloadUsed") === "true") return;
+        if ($(selectors.reloadBtn).length > 0) return;
         const reloadBtn = $(
           `<button class="${classes.reloadBtn}">Reload</button>`
         );
-        reloadBtn.on("click", self.fetchData);
-        $(selectors.appendLocation).append(reloadBtn);
+        reloadBtn.on("click", () => {
+          sessionStorage.setItem("reloadUsed", "true");
+
+          if (self.observer) self.observer.disconnect();
+          $(selectors.wrapper).remove();
+          self.fetchData();
+          self.hideReloadButton();
+        });
+        $(selectors.wrapper).append(reloadBtn);
       };
 
       self.hideReloadButton = () => {
@@ -324,30 +329,40 @@
       };
 
       self.observeChanges = () => {
-        const target = $(selectors.wrapper)[0];
-        if (!target) return;
+        setTimeout(() => {
+          const wrapper = document.querySelector(selectors.wrapper);
 
-        if (self.observer) self.observer.disconnect();
-
-        self.observer = new MutationObserver(() => {
-          const count = $(selectors.wrapper).find(selectors.userCard).length;
-          if (count === 0) {
+          
+          if (!wrapper) {
             self.showReloadButton();
-          } else {
-            self.hideReloadButton();
+            return;
           }
-        });
 
-        self.observer.observe(target, { childList: true });
+          if (self.observer) self.observer.disconnect();
+
+          self.observer = new MutationObserver(() => {
+            if ($(selectors.userCard).length === 0) {
+              self.showReloadButton();
+            }
+          });
+
+          self.observer.observe(wrapper, {
+            childList: true,
+            subtree: true,
+          });
+        }, 150);
       };
 
       self.buildHTML = () => {
+        self.hideReloadButton();
         const container = $(`<div class="${classes.wrapper}"></div>`);
 
         if (self.users.length === 0) {
           container.append(
             `<div class="${classes.errorBox}">Users not found</div>`
           );
+          
+          self.showReloadButton();
         }
 
         self.users.forEach((user) => {
@@ -365,28 +380,25 @@
         });
 
         const title = $(`<h1 class="${classes.usersTitle}">Users</h1>`);
-
         $(selectors.appendLocation).html("");
         $(selectors.appendLocation).append(title, container);
 
         self.setEvents();
+        self.observeChanges();
       };
 
       self.setEvents = () => {
-        // 1. Sil butonu olayı
         $(document).on("click", selectors.deleteBtn, function () {
           const id = $(this).closest(selectors.userCard).data("id");
           self.users = self.users.filter((user) => user.id !== id);
           self.saveToStorage();
           self.buildHTML();
 
-          // Popup varsa kapat
           $(`.${classes.popup}`).remove();
         });
 
-        // 2. Kart tıklanınca popup oluştur
         $(selectors.userCard).on("click", function (e) {
-          if ($(e.target).is(selectors.deleteBtn)) return; // Sil butonuna tıklanmışsa popup açma
+          if ($(e.target).is(selectors.deleteBtn)) return;
 
           const clone = $(this).clone();
           const overlay = $(`
@@ -399,7 +411,6 @@
           $("body").append(overlay);
         });
 
-        // 3. Popup arka plana tıklanınca kapanır
         $(document).on("click", `.${classes.popup}`, function (e) {
           if ($(e.target).hasClass(classes.popup)) {
             $(this).remove();
