@@ -250,7 +250,7 @@
         $("head").append(styleHTML);
         document.title = "Users";
 
-        // Add favicon
+       
         if (!$("link[rel='icon']").length) {
           const favicon = document.createElement("link");
           favicon.rel = "icon";
