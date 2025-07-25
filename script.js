@@ -25,6 +25,7 @@
         popupBox: "popup-box",
         spinner: "spinner",
         usersTitle: "users-title",
+        reloadBtn: "reload-btn",
       };
 
       const selectors = {
@@ -37,6 +38,7 @@
         popupBox: `.${classes.popupBox}`,
         usersTitle: `.${classes.usersTitle}`,
         spinner: `.${classes.spinner}`,
+        reloadBtn: `.${classes.reloadBtn}`,
         appendLocation: ".ins-api-users",
       };
 
@@ -228,6 +230,19 @@
             0% { transform: rotate(0); }
             100% { transform: rotate(360deg); }
             }
+        .${classes.reloadBtn} {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: var(--color-btn);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: var(--font-size-base);
+            transition: background-color var(--transition-default);
+        }
 
 
         </style>
@@ -286,12 +301,44 @@
           const timeDiff = now - parsedData.time;
 
           if (timeDiff < 86400000) {
+            // 24 hours in milliseconds
             self.users = parsedData.users;
             self.buildHTML();
+            return;
           }
         }
 
         self.fetchData();
+      };
+
+      self.showReloadButton = () => {
+        const reloadBtn = $(
+          `<button class="${classes.reloadBtn}">Reload</button>`
+        );
+        reloadBtn.on("click", self.fetchData);
+        $(selectors.appendLocation).append(reloadBtn);
+      };
+
+      self.hideReloadButton = () => {
+        $(selectors.reloadBtn).remove();
+      };
+
+      self.observeChanges = () => {
+        const target = $(selectors.wrapper)[0];
+        if (!target) return;
+
+        if (self.observer) self.observer.disconnect();
+
+        self.observer = new MutationObserver(() => {
+          const count = $(selectors.wrapper).find(selectors.userCard).length;
+          if (count === 0) {
+            self.showReloadButton();
+          } else {
+            self.hideReloadButton();
+          }
+        });
+
+        self.observer.observe(target, { childList: true });
       };
 
       self.buildHTML = () => {
@@ -357,6 +404,10 @@
           if ($(e.target).hasClass(classes.popup)) {
             $(this).remove();
           }
+        });
+        $(document).on("click", selectors.reloadBtn, function () {
+          self.fetchData();
+          self.hideReloadButton();
         });
       };
 
