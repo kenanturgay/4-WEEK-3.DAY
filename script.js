@@ -333,13 +333,13 @@
         if (!wrapper) return;
         if (self.observer) self.observer.disconnect();
         self.observer = new MutationObserver(() => {
-            if ($(selectors.userCard).length === 0) {
-                self.showReloadButton();
-            }
+          if ($(selectors.userCard).length === 0) {
+            self.showReloadButton();
+          }
         });
         self.observer.observe(wrapper, {
-            childList: true,
-            subtree: true,
+          childList: true,
+          subtree: true,
         });
       };
 
@@ -371,7 +371,6 @@
         $(selectors.appendLocation).html("");
         $(selectors.appendLocation).append(title, container);
 
-        
         if (self.users.length === 0) {
           self.showReloadButton();
         }
@@ -381,15 +380,13 @@
       };
 
       self.setEvents = () => {
-        
         $(document).off("click", selectors.deleteBtn);
         $(document).off("click", selectors.reloadBtn);
         $(document).off("click", `.${classes.popup}`);
         $(selectors.userCard).off("click");
 
-        
-        $(document).on("click", selectors.deleteBtn, function () {
-          const id = $(this).closest(selectors.userCard).data("id");
+        $(document).on("click", selectors.deleteBtn, (e) => {
+          const id = $(e.currentTarget).closest(selectors.userCard).data("id");
           self.users = self.users.filter((user) => user.id !== id);
           self.saveToStorage();
           self.buildHTML();
@@ -397,7 +394,7 @@
           $(`.${classes.popup}`).remove();
         });
 
-        $(selectors.userCard).on("click", function (e) {
+        $(selectors.userCard).on("click", (e) => {
           if ($(e.target).is(selectors.deleteBtn)) return;
 
           const clone = $(this).clone();
@@ -411,12 +408,12 @@
           $("body").append(overlay);
         });
 
-        $(document).on("click", `.${classes.popup}`, function (e) {
+        $(document).on("click", `.${classes.popup}`, (e) => {
           if ($(e.target).hasClass(classes.popup)) {
-            $(this).remove();
+            $(e.currentTarget).remove();
           }
         });
-        $(document).on("click", selectors.reloadBtn, function () {
+        $(document).on("click", selectors.reloadBtn, () => {
           self.fetchData();
           self.hideReloadButton();
         });
