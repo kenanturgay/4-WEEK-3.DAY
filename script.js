@@ -329,28 +329,18 @@
       };
 
       self.observeChanges = () => {
-        setTimeout(() => {
-          const wrapper = document.querySelector(selectors.wrapper);
-
-          
-          if (!wrapper) {
-            self.showReloadButton();
-            return;
-          }
-
-          if (self.observer) self.observer.disconnect();
-
-          self.observer = new MutationObserver(() => {
+        const wrapper = document.querySelector(selectors.wrapper);
+        if (!wrapper) return;
+        if (self.observer) self.observer.disconnect();
+        self.observer = new MutationObserver(() => {
             if ($(selectors.userCard).length === 0) {
-              self.showReloadButton();
+                self.showReloadButton();
             }
-          });
-
-          self.observer.observe(wrapper, {
+        });
+        self.observer.observe(wrapper, {
             childList: true,
             subtree: true,
-          });
-        }, 150);
+        });
       };
 
       self.buildHTML = () => {
@@ -361,8 +351,6 @@
           container.append(
             `<div class="${classes.errorBox}">Users not found</div>`
           );
-          
-          self.showReloadButton();
         }
 
         self.users.forEach((user) => {
@@ -383,11 +371,23 @@
         $(selectors.appendLocation).html("");
         $(selectors.appendLocation).append(title, container);
 
+        
+        if (self.users.length === 0) {
+          self.showReloadButton();
+        }
+
         self.setEvents();
         self.observeChanges();
       };
 
       self.setEvents = () => {
+        
+        $(document).off("click", selectors.deleteBtn);
+        $(document).off("click", selectors.reloadBtn);
+        $(document).off("click", `.${classes.popup}`);
+        $(selectors.userCard).off("click");
+
+        
         $(document).on("click", selectors.deleteBtn, function () {
           const id = $(this).closest(selectors.userCard).data("id");
           self.users = self.users.filter((user) => user.id !== id);
