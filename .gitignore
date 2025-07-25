@@ -2,3 +2,5 @@
 *.pdf
 #ignore all .zip files
 *.zip
+#ignore all .html files
+*.html
