@@ -43,7 +43,6 @@
       const self = {
         users: [],
         storageKey: "users",
-        storageTimeKey: "usersTime",
       };
 
       self.init = () => {
@@ -248,19 +247,6 @@
         }
       };
 
-      self.loadFromStorage = () => {
-        const storedUsers = localStorage.getItem(self.storageKey);
-        const storedTime = localStorage.getItem(self.storageTimeKey);
-        const now = new Date().getTime();
-
-        if (storedUsers && storedTime && now - Number(storedTime) < 86400000) {
-          self.users = JSON.parse(storedUsers);
-          self.buildHTML();
-        } else {
-          self.fetchData();
-        }
-      };
-
       self.fetchData = async () => {
         try {
           $(selectors.appendLocation).html(
@@ -284,8 +270,28 @@
       };
 
       self.saveToStorage = () => {
-        localStorage.setItem(self.storageKey, JSON.stringify(self.users));
-        localStorage.setItem(self.storageTimeKey, new Date().getTime());
+        const data = {
+          users: self.users,
+          time: new Date().getTime(),
+        };
+        localStorage.setItem(self.storageKey, JSON.stringify(data));
+      };
+
+      self.loadFromStorage = () => {
+        const storedUsers = localStorage.getItem(self.storageKey);
+        const now = new Date().getTime();
+
+        if (storedUsers) {
+          const parsedData = JSON.parse(storedUsers);
+          const timeDiff = now - parsedData.time;
+
+          if (timeDiff < 86400000) {
+            self.users = parsedData.users;
+            self.buildHTML();
+          } else {
+            self.fetchData();
+          }
+        }
       };
 
       self.buildHTML = () => {
