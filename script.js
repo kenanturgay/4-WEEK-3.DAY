@@ -288,10 +288,10 @@
           if (timeDiff < 86400000) {
             self.users = parsedData.users;
             self.buildHTML();
-          } else {
-            self.fetchData();
           }
         }
+
+        self.fetchData();
       };
 
       self.buildHTML = () => {
